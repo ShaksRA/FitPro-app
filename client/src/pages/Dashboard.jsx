@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import styled from "styled-components";
-import { counts } from "../utils/data";
-import CountsCard from "../components/cards/CountsCard";
-import WeeklyStatCard from "../components/cards/WeeklyStatCard";
-import CategoryChart from "../components/cards/CategoryChart";
 import AddWorkout from "../components/AddWorkout";
 import WorkoutCard from "../components/cards/WorkoutCard";
-import { addWorkout, getDashboardDetails, getWorkouts } from "../api";
+import CaloriesCard from "../components/cards/CaloriesCard";
+import { Col, Row } from "react-bootstrap";
+import axios from "axios";
+import { getError } from "../utils/utils";
+import LoadingBox from "../components/LoadingBox";
+import MessageBox from "../components/MessageBox";
+import { origin } from "../origin";
 
 const Container = styled.div`
   flex: 1;
@@ -67,85 +69,68 @@ const CardWrapper = styled.div`
   }
 `;
 
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'FETCH_REQUEST':
+      return { ...state, loading: true };
+    case 'FETCH_SUCCESS':
+      return { ...state, loading: false, workout: action.payload };
+    case 'FETCH_FAILED':
+      return { ...state, loading: false, error: action.payload };
+    default:
+      return state;
+  }
+}
+
 const Dashboard = () => {
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState();
-  const [buttonLoading, setButtonLoading] = useState(false);
-  const [todaysWorkouts, setTodaysWorkouts] = useState([]);
-  const [workout, setWorkout] = useState(`#Legs
--Back Squat
--5 setsX15 reps
--30 kg
--10 min`);
+  const [{ loading, error, workout }, dispatch] = useReducer((reducer), {
+    loading: true,
+    error: '',
+    workout: []
+  });
 
-  const dashboardData = async () => {
-    setLoading(true);
-    const token = localStorage.getItem("fittrack-app-token");
-    await getDashboardDetails(token).then((res) => {
-      setData(res.data);
-      console.log(res.data);
-      setLoading(false);
-    });
-  };
+  const today = new Date();
+  const date = today.getDate() + "-" + ((today.getMonth() )+ 1) + "-" + today.getFullYear();
 
-  const getTodaysWorkout = async () => {
-    setLoading(true);
-    const token = localStorage.getItem("fittrack-app-token");
-    await getWorkouts(token, "").then((res) => {
-      setTodaysWorkouts(res?.data?.todaysWorkouts);
-      console.log(res.data);
-      setLoading(false);
-    });
-  };
-
-  const addNewWorkout = async () => {
-    setButtonLoading(true);
-    const token = localStorage.getItem("fittrack-app-token");
-    await addWorkout(token, { workoutString: workout })
-      .then((res) => {
-        dashboardData();
-        getTodaysWorkout();
-        setButtonLoading(false);
-      })
-      .catch((err) => {
-        alert(err);
-      });
-  };
+  const user = (JSON.parse(localStorage.getItem('userInfo'))).data.id;
 
   useEffect(() => {
-    dashboardData();
+    const getTodaysWorkout = async () => {
+      dispatch({ type: 'FETCH_REQUEST' });
+      try {
+        const res = await axios.get(`${origin}/api/getWorkout/${date}/${user}`);
+        dispatch({ type: 'FETCH_SUCCESS', payload: res.data });
+      } catch (error) {
+        dispatch({ type: 'FETCH_FAILED', payload: getError(error) });
+      }
+    }
     getTodaysWorkout();
-  }, []);
+  }, [date, user]);
 
   return (
     <Container>
       <Wrapper>
         <Title>Dashboard</Title>
-
         <FlexWrap>
-          {counts.map((item, index) => (
-            <CountsCard key={index} item={item} data={data} />
-          ))}
-        </FlexWrap>
-
-        <FlexWrap>
-          <WeeklyStatCard data={data} />
-          <CategoryChart data={data} />
-          <AddWorkout
-            workout={workout}
-            setWorkout={setWorkout}
-            addNewWorkout={addNewWorkout}
-            buttonLoading={buttonLoading}
-          />
+          <CaloriesCard />
         </FlexWrap>
 
         <Section>
           <Title>Todays Workouts</Title>
-          <CardWrapper>
-            {todaysWorkouts.map((workout) => (
-              <WorkoutCard key={workout.id} workout={workout} />
-            ))}
-          </CardWrapper>
+          <Row>
+            <Col md={9}>
+              {loading ? <LoadingBox /> : error ? <MessageBox>{error}</MessageBox> : (
+                <CardWrapper>
+                  {workout.data.map((workout) => (
+                    <WorkoutCard key={workout.id} workout={workout} />
+                  ))}
+                </CardWrapper>
+              )}
+            </Col>
+            <Col md={3}>
+              <AddWorkout date={date} />
+            </Col>
+          </Row>
         </Section>
       </Wrapper>
     </Container>
