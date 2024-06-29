@@ -1,12 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import styled from "styled-components";
 import WorkoutCard from "../components/cards/WorkoutCard";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers";
-import { getWorkouts } from "../api";
-import { CircularProgress } from "@mui/material";
-import { useDispatch } from "react-redux";
+import axios from "axios";
+import MessageBox from "../components/MessageBox";
+import LoadingBox from "../components/LoadingBox";
+import { getError } from "../utils/utils";
+import AddWorkout from "../components/AddWorkout";
+import { origin } from "../origin";
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'FETCH_REQUEST':
+      return { ...state, loading: true };
+    case 'FETCH_SUCCESS':
+      return { ...state, loading: false, workout: action.payload };
+    case 'FETCH_FAILED':
+      return { ...state, loading: false, error: action.payload };
+    default:
+      return state;
+  }
+}
 
 const Container = styled.div`
   flex: 1;
@@ -79,24 +95,28 @@ const SecTitle = styled.div`
 `;
 
 const Workouts = () => {
-  const dispatch = useDispatch();
-  const [todaysWorkouts, setTodaysWorkouts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [date, setDate] = useState("");
+  const [{ loading, error, workout }, dispatch] = useReducer((reducer), {
+    loading: true,
+    error: '',
+    workout: []
+  });
 
-  const getTodaysWorkout = async () => {
-    setLoading(true);
-    const token = localStorage.getItem("fittrack-app-token");
-    await getWorkouts(token, date ? `?date=${date}` : "").then((res) => {
-      setTodaysWorkouts(res?.data?.todaysWorkouts);
-      console.log(res.data);
-      setLoading(false);
-    });
-  };
+  const today = new Date();
+  const [date, setDate] = useState(today.getDate() + "-" + ((today.getMonth()) + 1) + "-" + today.getFullYear());
+  const user = (JSON.parse(localStorage.getItem('userInfo'))).data.id;
 
   useEffect(() => {
+    const getTodaysWorkout = async () => {
+      dispatch({ type: 'FETCH_REQUEST' });
+      try {
+        const res = await axios.get(`${origin}/api/getWorkout/${date}/${user}`);
+        dispatch({ type: 'FETCH_SUCCESS', payload: res.data });
+      } catch (error) {
+        dispatch({ type: 'FETCH_FAILED', payload: getError(error) });
+      }
+    }
     getTodaysWorkout();
-  }, [date]);
+  }, [date, user]);
 
   return (
     <Container>
@@ -105,22 +125,25 @@ const Workouts = () => {
           <Title>Select Date</Title>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DateCalendar
-              onChange={(e) => setDate(`${e.$M + 1}/${e.$D}/${e.$y}`)}
+              onChange={(e) => setDate(`${e.$D}-${e.$M + 1}-${e.$y}`)}
             />
           </LocalizationProvider>
+          <AddWorkout date={date} />
         </Left>
         <Right>
           <Section>
             <SecTitle>Today's Workout</SecTitle>
-            {loading ? (
-              <CircularProgress />
-            ) : (
-              <CardWrapper>
-                {todaysWorkouts.map((workout) => (
-                  <WorkoutCard workout={workout} key={workout.id} />
-                ))}
-              </CardWrapper>
-            )}
+            <CardWrapper>
+              {loading ? <LoadingBox /> : error ? <MessageBox variant="danger">{error}</MessageBox> : (
+                <>
+                  {
+                    workout.data.map((workout) => (
+                      <WorkoutCard workout={workout} key={workout.id} />
+                    ))
+                  }
+                </>
+              )}
+            </CardWrapper>
           </Section>
         </Right>
       </Wrapper>
