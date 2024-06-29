@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import TextInput from "./TextInput";
-import Button from "./Button";
+import { Button, Form } from "react-bootstrap";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { origin } from "../origin";
 
 const Card = styled.div`
   flex: 1;
@@ -27,36 +30,69 @@ const Title = styled.div`
   }
 `;
 
-const AddWorkout = ({ workout, setWorkout, addNewWorkout, buttonLoading }) => {
-  const handleInputChange = (e) => {
-    setWorkout(e.target.value);
-  };
+const AddWorkout = ({date}) => {
+
+  const [category, setCategory] = useState();
+  const [workoutName, setworkoutName] = useState();
+  const [sets, setSets] = useState();
+  const [reps, setReps] = useState();
+  const [weight, setWeight] = useState();
+  const [duration, setDuration] = useState();
+
+  const addWorkoutHandler = async (e) => {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem("userInfo")).data.id;
+    const res = await axios.post(`${origin}/api/addWorkout`, { user, category, workoutName, sets, reps, weight, duration, date });
+    if (res.status === 200) {
+      toast.success("Added");
+    } else {
+      toast.error("Failed")
+    }
+  }
 
   return (
     <Card>
       <Title>Add New Workout</Title>
-      <TextInput
-        label="Workout"
-        textArea
-        rows={10}
-        placeholder={`Enter in this format:
+      <Form onSubmit={addWorkoutHandler}>
+        <TextInput
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          label="Category(#)"
+          placeholder="ex.#back"
+        />
+        <TextInput
+          value={workoutName}
+          onChange={(e) => setworkoutName(e.target.value)}
+          label="Workout Name"
+          placeholder="ex.Lat pull down"
+        />
+        <TextInput
+          value={sets}
+          onChange={(e) => setSets(e.target.value)}
+          label="Sets"
+          placeholder="ex.3"
+        />
+        <TextInput
+          value={reps}
+          onChange={(e) => setReps(e.target.value)}
+          label="Reps"
+          placeholder="ex.15"
+        />
+        <TextInput
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          label="Weight"
+          placeholder="ex.50kg"
+        />
+        <TextInput
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+          label="Duration"
+          placeholder="ex. 10mins"
+        />
 
-#Category
--Workout Name
--Sets
--Reps
--Weight
--Duration`}
-        value={workout}
-        handelChange={handleInputChange}
-      />
-      <Button
-        text="Add Workout"
-        small
-        onClick={addNewWorkout}
-        isLoading={buttonLoading}
-        isDisabled={buttonLoading}
-      />
+        <Button type="submit">Add Workout</Button>
+      </Form>
     </Card>
   );
 };
