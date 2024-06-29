@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import LogoImage from "C:/Users/agarw/fitpro-app/src/utils/images/Logo.png";
-import AuthImage from "C:/Users/agarw/fitpro-app/src/utils/images/AuthImage.jpg";
+import LogoImage from "../utils/Logo.png";
+import AuthImage from "../utils/AuthImage.jpg";
 import SignIn from "../components/SignIn";
 import SignUp from "../components/SignUp";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const Container = styled.div`
   flex: 1;
@@ -71,6 +73,8 @@ const Authentication = () => {
 
   return (
     <Container>
+      <ToastContainer position="bottom-center" />
+
       <Left>
         <Logo src={LogoImage} />
         <Image src={AuthImage} />
