@@ -9,7 +9,8 @@ const Card = styled.div`
   padding: 16px 18px;
   border: 1px solid ${({ theme }) => theme.text_primary + 20};
   border-radius: 14px;
-  box-shadow: 1px 6px 20px 0px ${({ theme }) => theme.primary + 15};
+  // box-shadow: 1px 6px 20px 0px ${({ theme }) => theme.primary + 15};
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   display: flex;
   flex-direction: column;
   gap: 6px;
