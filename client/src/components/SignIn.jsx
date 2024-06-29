@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import TextInput from "./TextInput";
-import Button from "./Button";
-import { UserSignIn } from "../api";
-import { useDispatch } from "react-redux";
-import { loginSuccess } from "../react-redux/reducers/userSlice";
+import { Button, Form } from "react-bootstrap";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { origin } from "../origin";
 
 const Container = styled.div`
   width: 100%;
@@ -36,45 +36,51 @@ const Subtitle = styled.p`
   color: ${({ theme }) => theme.text_secondary};
 `;
 
-const Form = styled.form`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
-
 const SignIn = () => {
-  const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const validateInputs = () => {
-    if (!email || !password) {
-      alert("Please fill in all fields");
-      return false;
-    }
-    return true;
-  };
+  // const handleSignIn = async (e) => {
+  //   try {
+  //   e.preventDefault();
+  //   const res = await axios.post('https://movieflix-lyart.vercel.app/sign_in', { email, password }, { withCredentials: true })
+  //   // const res = await fetch("http://localhost:5000/user/signin", {
+  //     //   method: "POST",
+  //     //   headers: { 'content-type': 'application/json' },
+  //     //   body: JSON.stringify({ email, password })
+  //     // })
+  //     // .then((response) => {
+  //     //   return response.JSON();
+  //     // })
+  //     switch (res.status) {
+  //       case 200:
+  //         localStorage.setItem('userInfo', JSON.stringify(res));
+  //         // window.location.reload();
+  //         toast.success("Successfully Logged In.");
+  //         break;
+  //       case 405:
+  //         toast.error("Invalid Email.");
+  //         break;
+  //       default:
+  //         toast.error("Error in sign in");
+  //         break;
+  //     }
+  //   } catch (error) {
+  //     toast.error(error);
+  //   }
+  // };
 
   const handleSignIn = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (validateInputs()) {
-      try {
-        const res = await UserSignIn({ email, password });
-        dispatch(loginSuccess(res.data));
-        alert("Login Successful");
-      } catch (err) {
-        alert(err.response.data.message);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
+    try {
+      e.preventDefault();
+      const res = await axios.post(`${origin}/user/signin`, { email, password }, { withCredentials: true })
+      window.location.reload();
+      toast.success("Signin Successful.");
+      localStorage.setItem('userInfo', JSON.stringify(res));
+    } catch (error) {
+      toast.error("Invalid Credentials.");
     }
-  };
+  }
 
   return (
     <Container>
@@ -82,7 +88,7 @@ const SignIn = () => {
         <Title>Hello Folks from FitPro 👋</Title>
         <Subtitle>Have your login details for getting in!!</Subtitle>
       </Header>
-      <Form onSubmit={handleSignIn}>
+      <Form className="signup-form" onSubmit={handleSignIn}>
         <TextInput
           label="Email Address"
           placeholder="Enter your email address"
@@ -96,12 +102,7 @@ const SignIn = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <Button
-          type="submit"
-          text="Sign In"
-          isLoading={loading}
-          isDisabled={loading}
-        />
+        <Button type="submit" className="btn btn-primary">Sign In</Button>
       </Form>
     </Container>
   );
