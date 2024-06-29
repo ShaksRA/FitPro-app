@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import TextInput from "./TextInput";
-import Button from "./Button";
-import { UserSignUp } from "../api";
-import { useDispatch } from "react-redux";
-import { loginSuccess } from "../react-redux/reducers/userSlice";
+import { toast } from 'react-toastify';
+import { Form, Button } from 'react-bootstrap'
+import { origin } from "../origin";
+
+// import { UserSignUp } from "../api";
+// import { useDispatch } from "react-redux";
+// import { loginSuccess } from "../react-redux/reducers/useSlice";
 
 const Container = styled.div`
   width: 100%;
@@ -36,46 +39,44 @@ const Subtitle = styled.p`
   color: ${({ theme }) => theme.text_secondary};
 `;
 
-const Form = styled.form`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
+// const Form = styled.form`
+//   width: 100%;
+//   display: flex;
+//   flex-direction: column;
+//   gap: 20px;
+// `;
 
 const SignUp = () => {
-  const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const validateInputs = () => {
-    if (!name || !email || !password) {
-      alert("Please fill in all fields");
-      return false;
-    }
-    return true;
-  };
-
-  const handleSignUp = async (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    try {
+      // const res = await axios.post("http://localhost:5000/user/signup", { name, email, password })
+      const res = await fetch(`${origin}/user/signup`, {
+        method: "post",
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
 
-    if (validateInputs()) {
-      try {
-        const res = await UserSignUp({ name, email, password });
-        dispatch(loginSuccess(res.data));
-        alert("Account Created Successfully");
-      } catch (err) {
-        alert(err.response.data.message);
-      } finally {
-        setLoading(false);
+      switch (res.status) {
+        case 200:
+          window.location.reload();
+          toast.success("Successfully Signup.");
+          break;
+        case 401:
+          toast.error("User Already Exist.");
+          break;
+        default:
+          toast.error("Err in signup");
+          break;
       }
-    } else {
-      setLoading(false);
+    } catch (error) {
+      console.log(error)
     }
-  };
+  }
 
   return (
     <Container>
@@ -83,7 +84,7 @@ const SignUp = () => {
         <Title>Create New Account👋</Title>
         <Subtitle>Enter the required details to create a new account</Subtitle>
       </Header>
-      <Form onSubmit={handleSignUp}>
+      <Form className="signup-form" onSubmit={submitHandler}>
         <TextInput
           label="Full Name"
           placeholder="Enter your full name"
@@ -91,6 +92,7 @@ const SignUp = () => {
           onChange={(e) => setName(e.target.value)}
         />
         <TextInput
+          type="email"
           label="Email Address"
           placeholder="Enter your email address"
           value={email}
@@ -103,12 +105,7 @@ const SignUp = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <Button
-          type="submit"
-          text="Sign Up"
-          isLoading={loading}
-          isDisabled={loading}
-        />
+        <Button type="submit" className="btn btn-primary">Sign Up</Button>
       </Form>
     </Container>
   );
