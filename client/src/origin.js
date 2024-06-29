@@ -1,1 +1,1 @@
-export const origin = "https://fitproapp.netlify.app/"
+export const origin = "https://fitpro-backend.vercel.app"
