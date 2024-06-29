@@ -19,7 +19,7 @@ dotenv.config();
 
 app.use(cors(
     {
-        origin: "https://fitpro-zeta.vercel.app",
+        origin: "https://fitpro-one.vercel.app/",
         methods: ["POST", "GET", "DELETE", "PUT"],
         credentials: true,
         withCredentials: true,
